@@ -70,12 +70,11 @@ class SupConLoss(nn.Module):
             torch.matmul(anchor_feature, contrast_feature.T),
             self.temperature)
         # for numerical stability
-        # logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
-        # logits = anchor_dot_contrast - logits_max.detach()
-        logits = anchor_dot_contrast
-        import pdb
-        pdb.set_trace()
-        print(logits.mean())
+        logits_max, _ = torch.max(anchor_dot_contrast, dim=1, keepdim=True)
+        logits = anchor_dot_contrast - logits_max.detach()
+        # logits = anchor_dot_contrast
+
+        # print(logits.mean())
 
         # tile mask
         mask = mask.repeat(anchor_count, contrast_count)
@@ -94,6 +93,8 @@ class SupConLoss(nn.Module):
 
         # compute mean of log-likelihood over positive
         mean_log_prob_pos = (mask * log_prob).sum(1) / mask.sum(1)
+        # import pdb
+        # pdb.set_trace()
 
         # loss
         loss = - (self.temperature / self.base_temperature) * mean_log_prob_pos

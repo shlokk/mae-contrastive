@@ -230,13 +230,17 @@ class MaskedAutoencoderViT(nn.Module):
         # Contrastive loss
         bsz = int(imgs.shape[0]/2) # hack for contrastive, otherwise line 227 doesn't work " error dim 0 is greater than 64 features"
 
+
+        latent_contrastive = latent.mean(dim=1, keepdim=False)
+        latent_contrastive =  self.projection_head(latent_contrastive)
+
         # import pdb
         # pdb.set_trace()
-        latent_contrastive = self.projection_head(latent)
-        f1, f2 = torch.split(latent_contrastive, [bsz, bsz], dim=0)
+        features = F.normalize(latent_contrastive, dim=-1)
+        f1, f2 = torch.split(features, [bsz, bsz], dim=0)
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
         loss_contrastive = SupConLoss()(features)
-        print(loss_contrastive)
+        # print(loss_contrastive)
 
         # mae features
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
