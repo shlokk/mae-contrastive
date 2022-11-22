@@ -31,6 +31,8 @@ def train_one_epoch(model: torch.nn.Module,
     print_freq = 20
 
     accum_iter = args.accum_iter
+    weight_mae = args.weight_mae
+    weight_simclr = args.weight_simclr
 
     optimizer.zero_grad()
 
@@ -49,7 +51,7 @@ def train_one_epoch(model: torch.nn.Module,
         with torch.cuda.amp.autocast():
             loss, loss_contrastive, _, _ = model(samples, mask_ratio=args.mask_ratio)
 
-        loss = 0.97 * loss + 0.03 * loss_contrastive
+        loss = weight_mae * loss + weight_simclr * loss_contrastive
         loss_value = loss.item()
         loss_contrastive_value = loss_contrastive.item()
 

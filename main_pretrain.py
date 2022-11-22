@@ -30,6 +30,7 @@ import timm.optim.optim_factory as optim_factory
 import util.misc as misc
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
 from util_contrastive import TwoCropTransform
+from util_contrastive import GaussianBlur
 
 import models_mae
 
@@ -57,6 +58,11 @@ def get_args_parser():
     parser.add_argument('--norm_pix_loss', action='store_true',
                         help='Use (per-patch) normalized pixels as targets for computing loss')
     parser.set_defaults(norm_pix_loss=False)
+
+    parser.add_argument('--weight_mae', default=0.97, type=float,
+                        help='Loss weight of mae (default: 0.97).')
+    parser.add_argument('--weight_simclr', default=0.03, type=float,
+                        help='Loss weight of simclr (default: 0.03).')
 
     # Optimizer parameters
     parser.add_argument('--weight_decay', type=float, default=0.05,
@@ -134,6 +140,7 @@ def main(args):
             transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)
         ], p=0.8),
         transforms.RandomGrayscale(p=0.2),
+        transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
         transforms.ToTensor(),
         normalize,
     ])
