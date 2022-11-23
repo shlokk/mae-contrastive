@@ -32,10 +32,11 @@ def parse_args():
 
 def get_shared_folder() -> Path:
     user = os.getenv("USER")
-    if Path("/checkpoint/").is_dir():
-        p = Path(f"/checkpoint/{user}/experiments")
-        p.mkdir(exist_ok=True)
-        return p
+    return "/fs/vulcan-projects/jigsaw_selfsup_shlokm/dv1/mae/checkpoint/"
+    # if Path("/checkpoint/").is_dir():
+    #     p = Path(f"/checkpoint/{user}/experiments")
+    #     p.mkdir(exist_ok=True)
+    #     return p
     raise RuntimeError("No shared folder available")
 
 

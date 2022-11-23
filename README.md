@@ -12,7 +12,15 @@ conda env create -f environment_mae_simclr.yml
 Instructions for running code <br>
 git clone https://github.com/shlokk/mae-contrastive.git <br>
 
-python -m torch.distributed.launch main_pretrain.py --data_path /path /to /imagenet/ --output_dir mae_contrastive_baseline --log_dir mae_contrastive_baseline_logs --num_workers 8 --blr 2.5e-4 --weight_decay 0.05 --model mae_vit_base_patch16 --batch_size 64 --dist_url 'tcp://localhost:10004'
+
+Script for running SimCLR baseline:
+
+OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=4 main_pretrain.py --data_path /fs/vulcan-datasets/imagenet/ --output_dir mae_baseline --log_dir mae_baseline_logs --num_workers 8 --blr 2.5e-4 --weight_decay 0.05 --model mae_vit_base_patch16 --batch_size 64 --dist_url 'tcp://localhost:10004' --epochs 50 --weight_simclr 0 --weight_mae 1.0 --accum_iter 4
+
+Script for running CAN:
+
+OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=4 main_pretrain.py --data_path /fs/vulcan-datasets/imagenet/ --output_dir can_baseline --log_dir can_baseline_logs --num_workers 8 --blr 2.5e-4 --weight_decay 0.05 --model mae_vit_base_patch16 --batch_size 64 --dist_url 'tcp://localhost:10004' --epochs 50 --weight_simclr 0.03 --weight_mae 0.97 --accum_iter 4
+
 
 [comment]: <> (This is a PyTorch/GPU re-implementation of the paper [Masked Autoencoders Are Scalable Vision Learners]&#40;https://arxiv.org/abs/2111.06377&#41;:)
 
