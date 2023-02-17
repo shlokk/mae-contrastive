@@ -27,12 +27,14 @@ def train_one_epoch(model: torch.nn.Module,
     metric_logger = misc.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('loss_contrastive', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
+    metric_logger.add_meter('loss_noise', misc.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 20
 
     accum_iter = args.accum_iter
     weight_mae = args.weight_mae
     weight_simclr = args.weight_simclr
+    weight_noise = args.weight_noise
 
     optimizer.zero_grad()
 
@@ -49,11 +51,13 @@ def train_one_epoch(model: torch.nn.Module,
         samples = samples.to(device, non_blocking=True)
 
         with torch.cuda.amp.autocast():
-            loss, loss_contrastive, _, _ = model(samples, mask_ratio=args.mask_ratio)
+            loss, loss_contrastive, loss_noise, _, _ = model(samples, mask_ratio=args.mask_ratio)
 
-        loss = weight_mae * loss + weight_simclr * loss_contrastive
+        loss_recon = weight_noise * loss_noise + (1-weight_noise) * loss
+        loss = weight_mae * loss_recon + weight_simclr * loss_contrastive
         loss_value = loss.item()
         loss_contrastive_value = loss_contrastive.item()
+        loss_noise_value = loss_noise.item()
 
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
@@ -69,6 +73,7 @@ def train_one_epoch(model: torch.nn.Module,
 
         metric_logger.update(loss=loss_value)
         metric_logger.update(loss_contrastive=loss_contrastive_value)
+        metric_logger.update(loss_noise=loss_noise_value)
 
         lr = optimizer.param_groups[0]["lr"]
         metric_logger.update(lr=lr)

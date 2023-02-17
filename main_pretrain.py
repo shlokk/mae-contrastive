@@ -24,7 +24,7 @@ import torchvision.datasets as datasets
 
 import timm
 
-assert timm.__version__ == "0.3.2"  # version check
+#assert timm.__version__ == "0.3.2"  # version check
 import timm.optim.optim_factory as optim_factory
 
 import util.misc as misc
@@ -64,6 +64,14 @@ def get_args_parser():
     parser.add_argument('--weight_simclr', default=0.03, type=float,
                         help='Loss weight of simclr (default: 0.03).')
 
+
+    parser.add_argument('--noise_loss', action='store_true')
+    parser.add_argument('--std', default=0.05, type=float,
+                        help='Standard deviation of noise added to loss.')    
+    parser.add_argument('--weight_noise', default=0.3, type=float,
+                        help='Weight allocated to noise loss.')
+
+
     # Optimizer parameters
     parser.add_argument('--weight_decay', type=float, default=0.05,
                         help='weight decay (default: 0.05)')
@@ -79,7 +87,7 @@ def get_args_parser():
                         help='epochs to warmup LR')
 
     # Dataset parameters
-    parser.add_argument('--data_path', default='/datasets01/imagenet_full_size/061417/', type=str,
+    parser.add_argument('--data_path', default='/data/scratch/joshrob/data/imagenet100/', type=str,
                         help='dataset path')
 
     parser.add_argument('--output_dir', default='./output_dir',
@@ -172,7 +180,7 @@ def main(args):
     )
     
     # define the model
-    model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss)
+    model = models_mae.__dict__[args.model](norm_pix_loss=args.norm_pix_loss, noise_loss=args.noise_loss)
 
     model.to(device)
 
@@ -235,6 +243,7 @@ def main(args):
 if __name__ == '__main__':
     args = get_args_parser()
     args = args.parse_args()
+    #args.local_rank = os.environ['LOCAL_RANK']
     if args.output_dir:
         Path(args.output_dir).mkdir(parents=True, exist_ok=True)
     main(args)

@@ -18,7 +18,7 @@ import torch.nn.functional as F
 from timm.models.vision_transformer import PatchEmbed, Block
 from loss_contrastive import SupConLoss
 
-from util.pos_embed import get_2d_sincos_pos_embed
+from util.pos_embed import get_2d_sincos_pos_embed, get_1d_sincos_pos_embed
 
 
 class MaskedAutoencoderViT(nn.Module):
@@ -27,7 +27,8 @@ class MaskedAutoencoderViT(nn.Module):
     def __init__(self, img_size=224, patch_size=16, in_chans=3,
                  embed_dim=1024, depth=24, num_heads=16,
                  decoder_embed_dim=512, decoder_depth=8, decoder_num_heads=16,
-                 mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False):
+                 mlp_ratio=4., norm_layer=nn.LayerNorm, norm_pix_loss=False,
+                 noise_loss=False, std=0.1, pe_dims=128):
         super().__init__()
 
         # --------------------------------------------------------------------------
@@ -50,6 +51,17 @@ class MaskedAutoencoderViT(nn.Module):
                 nn.ReLU(inplace=True),
                 nn.Linear(embed_dim, feat_dim)
             )
+
+        # noise loss specifics
+        self.noise_loss = noise_loss
+        self.std = std
+        self.pe_dims=pe_dims
+        self.noise_pe_mlp = nn.Sequential(
+                nn.Linear(pe_dims, embed_dim),
+                nn.ReLU(inplace=True),
+                nn.Linear(embed_dim, embed_dim)
+            )
+
         # --------------------------------------------------------------------------
 
         # --------------------------------------------------------------------------
@@ -206,7 +218,7 @@ class MaskedAutoencoderViT(nn.Module):
 
         return x
 
-    def forward_loss(self, imgs, pred, mask):
+    def forward_loss(self, imgs, pred, mask, noise=None):
         """
         imgs: [N, 3, H, W]
         pred: [N, L, p*p*3]
@@ -222,9 +234,21 @@ class MaskedAutoencoderViT(nn.Module):
         loss = loss.mean(dim=-1)  # [N, L], mean loss per patch
 
         loss = (loss * mask).sum() / mask.sum()  # mean loss on removed patches
-        return loss
+
+        losee_noise = -1
+        if self.noise_loss:
+            noise = self.patchify(noise)
+            loss_noise = (pred - noise) ** 2
+            loss_noise = loss_noise.mean(dim=-1)  # [N, L], mean loss per patch
+            loss_noise = (loss_noise * (1-mask)).sum() / (1-mask).sum()  # mean loss on removed patches
+
+        return loss, loss_noise
 
     def forward(self, imgs, mask_ratio=0.75):
+        if self.noise_loss:
+            noise_level = self.std * torch.rand(imgs.shape[0]).to(imgs.device)
+            noise = noise_level[:, None, None, None] * torch.randn(imgs.shape).to(imgs.device)
+            imgs += noise
         latent, mask, ids_restore = self.forward_encoder(imgs, mask_ratio)
 
         # Contrastive loss
@@ -241,11 +265,17 @@ class MaskedAutoencoderViT(nn.Module):
         features = torch.cat([f1.unsqueeze(1), f2.unsqueeze(1)], dim=1)
         loss_contrastive = SupConLoss()(features)
         # print(loss_contrastive)
+        if self.noise_loss:
+            noise_pe = get_1d_sincos_pos_embed(noise_level, dim=self.pe_dims)
+            noise_pe = self.noise_pe_mlp(noise_pe)
+
+            noise_pe = torch.cat(latent.shape[1] * [noise_pe.unsqueeze(1)], dim=1)
+            latent += noise_pe
 
         # mae features
         pred = self.forward_decoder(latent, ids_restore)  # [N, L, p*p*3]
-        loss = self.forward_loss(imgs, pred, mask)
-        return loss, loss_contrastive, pred, mask
+        loss, loss_noise = self.forward_loss(imgs, pred, mask, noise=noise)
+        return loss, loss_contrastive, loss_noise, pred, mask
 
 
 def mae_vit_base_patch16_dec512d8b(**kwargs):

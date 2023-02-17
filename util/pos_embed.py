@@ -7,9 +7,19 @@
 # Position embedding utils
 # --------------------------------------------------------
 
+import math
 import numpy as np
 
 import torch
+
+def get_1d_sincos_pos_embed(x: torch.Tensor, dim: int):
+    """From: https://github.com/lucidrains/denoising-diffusion-pytorch/blob/main/denoising_diffusion_pytorch/denoising_diffusion_pytorch.py"""
+    half_dim = dim // 2
+    emb = math.log(10000) / (half_dim - 1)
+    emb = torch.exp(torch.arange(half_dim, device=x.device) * -emb)
+    emb = x[:, None] * emb[None, :]
+    emb = torch.cat((emb.sin(), emb.cos()), dim=-1)
+    return emb
 
 # --------------------------------------------------------
 # 2D sine-cosine position embedding
