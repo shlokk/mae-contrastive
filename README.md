@@ -1,4 +1,4 @@
-# CAN: Contrastive Masked Autoencoders and Noise Prediction Pretraining
+# CAN: A simple, efficient and scalable contrastive masked autoencoder for learning visual representations
 
 Official PyTorch implementation of ["A simple, efficient and scalable contrastive masked autoencoder for learning visual representations"](https://arxiv.org/abs/2210.16870).
 
