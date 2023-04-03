@@ -133,15 +133,12 @@ def main(args):
             RandomResizedCrop(224, interpolation=3),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-            transforms.Normalize(mean=[0.485*255, 0.456*255, 0.406*255], std=[0.229*255, 0.224*255, 0.225*255])])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     transform_val = transforms.Compose([
             transforms.Resize(256, interpolation=3),
             transforms.CenterCrop(224),
             transforms.ToTensor(),
-            # transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
-            transforms.Normalize(mean=[0.485 * 255, 0.456 * 255, 0.406 * 255],
-                             std=[0.229 * 255, 0.224 * 255, 0.225 * 255])])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
     dataset_train = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transform_train)
     dataset_val = datasets.ImageFolder(os.path.join(args.data_path, 'val'), transform=transform_val)
     print(dataset_train)
@@ -196,19 +193,14 @@ def main(args):
 
     if args.finetune and not args.eval:
         checkpoint = torch.load(args.finetune, map_location='cpu')
-        # import pdb
-        # pdb.set_trace()
 
         print("Load pre-trained checkpoint from: %s" % args.finetune)
         checkpoint_model = checkpoint['model']
         state_dict = model.state_dict()
-        # print(checkpoint_model.keys())
         for k in ['head.weight', 'head.bias']:
             if k in checkpoint_model and checkpoint_model[k].shape != state_dict[k].shape:
                 print(f"Removing key {k} from pretrained checkpoint")
                 del checkpoint_model[k]
-                # if k.startwith('patch_embed'):
-                #     print(k)
 
         # interpolate position embedding
         interpolate_pos_embed(model, checkpoint_model)
@@ -228,6 +220,12 @@ def main(args):
     # for linear prob only
     # hack: revise model's head with BN
     model.head = torch.nn.Sequential(torch.nn.BatchNorm1d(model.head.in_features, affine=False, eps=1e-6), model.head)
+    if args.resume:
+        checkpoint = torch.load(args.resume, map_location='cpu')
+        print("Load pre-trained checkpoint from: %s" % args.resume)
+        checkpoint_model = checkpoint['model']
+        msg = model.load_state_dict(checkpoint_model, strict=False)
+        print(msg)
     # freeze all but the head
     for _, p in model.named_parameters():
         p.requires_grad = False
