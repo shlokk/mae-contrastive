@@ -12,7 +12,7 @@ Official PyTorch implementation of ["A simple, efficient and scalable contrastiv
 
 
 ```
-  conda env create -f environment_mae_simclr.yml
+  conda env create -f can.yml
   conda activate can
 ```
 
