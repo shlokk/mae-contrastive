@@ -14,11 +14,17 @@ Official PyTorch implementation of ["A simple, efficient and scalable contrastiv
 
 ## Requirements
 - Instructions for creating conda enviroment. <br>
-- conda env create -f environment_mae_simclr.yml
+
+
+```
+  conda env create -f environment_mae_simclr.yml
+  conda activate can
+```
 
 ## Instructions for running CAN <br>
 ```
 git clone https://github.com/shlokk/mae-contrastive.git
+cd mae-contrastive
 ```
 
 
