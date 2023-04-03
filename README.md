@@ -6,6 +6,7 @@ Official PyTorch implementation of ["A simple, efficient and scalable contrastiv
 <img src="can.png" width="80%" style={text-align: center;}/>
 </p>
 
+- The original implementation was in JAX+TPU. This re-implementation is in PyTorch+GPU.
 
 ## Requirements
 - Instructions for creating conda enviroment. <br>
