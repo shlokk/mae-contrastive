@@ -42,12 +42,25 @@ OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=4 main_pre
     --weight_mae 1.0 --accum_iter 4
 ```
 
+We have released models for 50 epoch pretraining here("https://arxiv.org/abs/1911.05722"). We will be releasing longer epoch training (800 and 1600 epochs) soon.
+
 Script for running linear evaluation:
 ```
 OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=4 main_linprobe.py \ 
     --data_path path_to_imagenet --batch_size 512 --model vit_base_patch16 --cls_token \
     --finetune can_noise_baseline/checkpoint-49.pth --epochs 90 --blr 0.1 --weight_decay 0.0 \
     --dist_eval --data_path  path_to_imagenet --output_dir mae_baseline_lineval
+```
+
+
+## Citation
+```bibtex
+@article{mishra2022simple,
+  title={A simple, efficient and scalable contrastive masked autoencoder for learning visual representations},
+  author={Mishra, Shlok and Robinson, Joshua and Chang, Huiwen and Jacobs, David and Sarna, Aaron and Maschinot, Aaron and Krishnan, Dilip},
+  journal={arXiv preprint arXiv:2210.16870},
+  year={2022}
+}
 ```
 [comment]: <> (This is a PyTorch/GPU re-implementation of the paper [Masked Autoencoders Are Scalable Vision Learners]&#40;https://arxiv.org/abs/2111.06377&#41;:)
 
