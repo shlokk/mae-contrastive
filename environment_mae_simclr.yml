@@ -1,4 +1,4 @@
-name: mae
+name: can
 channels:
   - iopath
   - pytorch
