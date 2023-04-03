@@ -288,4 +288,4 @@ OMP_NUM_THREADS=1 python -m torch.distributed.launch --nproc_per_node=4 main_pre
 
 [comment]: <> (### License)
 
-[comment]: <> (This project is under the CC-BY-NC 4.0 license. See [LICENSE]&#40;LICENSE&#41; for details.)
+
